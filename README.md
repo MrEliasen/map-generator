@@ -3,6 +3,9 @@
 Will generate a map with biomes based on a Whittaker diagram found [here](http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/#biomes).
 
 
+Made as a small side project to learn a bit more about random map generation.
+
+
 ## Example Map
 
 ![Example generated map](https://i.imgur.com/ELkUdiU.png)
