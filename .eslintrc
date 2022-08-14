@@ -1,0 +1,17 @@
+{
+    "root": true,
+    "extends": ["eslint:recommended", "airbnb"],
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaVersion": 2020
+    },
+    "env": {
+        "es2020": true
+    },
+    "rules": {
+        "indent": ["error", 4],
+        "import/extensions": "off",
+        "no-continue": "off",
+        "import/prefer-default-export": "off"
+    }
+}
