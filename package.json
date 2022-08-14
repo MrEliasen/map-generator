@@ -2,7 +2,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "start": "node ./index.js"
+    "generate": "node ./index.js"
   },
   "dependencies": {
     "chalk": "^5.0.1",

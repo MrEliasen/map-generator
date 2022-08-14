@@ -3,6 +3,12 @@
 Will generate a map with biomes based on a Whittaker diagram found [here](http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/#biomes).
 
 
+Run `npm run generate` to generate a new map. It will output the result to `./map.json` and render it in the console as well.
+
+
+You can update the `./index.js` file to play a round a bit more with some settings.
+
+
 Made as a small side project to learn a bit more about random map generation.
 
 
