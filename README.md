@@ -24,7 +24,7 @@ The [floodFil](https://github.com/MrEliasen/map-generator/blob/master/libs/map-g
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 
 ## Resources
