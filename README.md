@@ -25,3 +25,13 @@ The [floodFil](https://github.com/MrEliasen/map-generator/blob/master/libs/map-g
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## Resources
+
+A couple of useful resources for random/procedual map generation:
+
+- [Notes on Procedural Map Generation Techniques
+](https://christianjmills.com/Notes-on-Procedural-Map-Generation-Techniques/)
+- [Polygonal Map Generation for Games](http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/)
+- [Terrain and heightmaps generation using the diamond-square algorithm](https://yonatankra.com/how-to-create-terrain-and-heightmaps-using-the-diamond-square-algorithm-in-javascript/)
