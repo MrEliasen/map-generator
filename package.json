@@ -1,14 +1,30 @@
 {
+  "name": "map-generator",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "map-generator",
+    "world-generator",
+    "random"
+  ],
+  "main": "index.js",
   "scripts": {
-    "generate": "node ./index.js"
+    "example": "node ./example.js"
+  },
+  "author": "Mark Eliasen",
+  "bugs": {
+    "url": "https://github.com/MrEliasen/map-generator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/MrEliasen/map-generator.git"
   },
   "dependencies": {
-    "chalk": "^5.0.1",
     "seedrandom": "^3.0.5"
   },
   "devDependencies": {
+    "chalk": "^5.0.1",
     "eslint": "^8.22.0",
     "eslint-config-airbnb": "^19.0.4"
   }
