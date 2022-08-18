@@ -1,7 +1,7 @@
 import { Sea } from '../biomes/sea.js';
 import { FreshWater } from '../biomes/fresh-water.js';
 import { getTileNeighbours, getPathMap } from '../helpers.js';
-import { AStar, Graph } from '../../helpers/astar.js';
+import { AStar, Graph } from '../../3rdparty/astar.js';
 
 export class River {
     constructor(width, height, rng, matrix = null) {
