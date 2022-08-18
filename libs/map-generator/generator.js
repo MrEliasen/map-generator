@@ -1,5 +1,6 @@
 import seedrandom from 'seedrandom';
 import { randomBytes } from 'node:crypto';
+import chalk from 'chalk';
 
 import { createBiome } from './biome.js';
 import { Sea } from './biomes/sea.js';
@@ -10,7 +11,12 @@ import { Beach } from './biomes/beach.js';
 import { Landmass } from './generators/landmass.js';
 import { River } from './generators/river.js';
 import { Stepper } from './generators/stepper.js';
-import { getTileNeighbours, isValidCell, findNearest } from './helpers.js';
+import {
+    getTileNeighbours,
+    isValidCell,
+    findNearest,
+    convertToScanline,
+} from './helpers.js';
 
 export class Generator {
     constructor(width, height, seed = null) {
@@ -420,5 +426,27 @@ export class Generator {
         neighbours.forEach((neighbour) => {
             this.cleanTile(neighbour.x, neighbour.y);
         });
+    }
+
+    /**
+     * Renders the map in console log
+     * @return {void}
+     */
+    outputToConsole() {
+        const grid = convertToScanline(this.matrix);
+
+        for (let y = 0; y < grid.length; y += 1) {
+            const tiles = grid[y];
+            let output = '';
+
+            for (let x = 0; x < tiles.length; x += 1) {
+                const tile = grid[y][x];
+
+                output = `${output}${chalk.hex(tile.color).bold('██')}`;
+            }
+
+            // eslint-disable-next-line
+            console.log(output);
+        }
     }
 }
