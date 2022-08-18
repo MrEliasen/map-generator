@@ -52,6 +52,10 @@ fs.writeFileSync('./map.json', JSON.stringify(mapGenerator.matrix));
 
 The [floodFil](https://github.com/MrEliasen/map-generator/blob/master/libs/map-generator/generator.js#L295) method will cause the maximum call stack to be exceeded if going much above 100x100 map.
 
+I created a version which utilises a single while loop, but the map generator goes from about 0.5s generation time for a 100x100 map, to several seconds.
+
+Suggestions welcome!
+
 
 ## License
 
