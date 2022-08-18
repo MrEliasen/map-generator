@@ -3,13 +3,44 @@
 Will generate a map with biomes based on a Whittaker diagram found [here](http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/#biomes).
 
 
-Run `npm run generate` to generate a new map. It will output the result to `./map.json` and render it in the console as well.
+Run `npm run example` to generate a new map example . It will output the result to `./example-map.json` and render it in the console as well.
 
 
 You can update the `./index.js` file to play a round a bit more with some settings.
 
 
 Made as a small side project to learn a bit more about random map generation.
+
+## Usage
+
+```js
+import fs from 'fs';
+import { Generator } from 'map-generator';
+
+ // any string; if null a random seed will be generated
+const seed = null;
+const height = 100;
+const width = 100;
+
+const worldMap = new Generator(width, height, seed);
+// how many steppers to generate, which creates land mass
+worldMap.setLandmassStepperCount(100);
+// how many steps a stepper should take
+worldMap.setLandmassStepperStep(150);
+// how many rivers to generate (min, max)
+worldMap.setRivers(1, 2);
+// generate the map
+await worldMap.generate();
+
+// render the map to console.
+mapGenerator.outputToConsole();
+
+// output the map seed
+console.log(chalk.green(`Seed: ${mapGenerator.seed}`));
+
+// save the map to json
+fs.writeFileSync('./map.json', JSON.stringify(mapGenerator.matrix));
+```
 
 
 ## Example Map
