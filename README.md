@@ -13,9 +13,12 @@ Made as a small side project to learn a bit more about random map generation.
 
 ## Usage
 
+install `npm install random-map-generator`
+
+
 ```js
 import fs from 'fs';
-import { Generator } from 'map-generator';
+import { Generator } from 'random-map-generator';
 
  // any string; if null a random seed will be generated
 const seed = null;
