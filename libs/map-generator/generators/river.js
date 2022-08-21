@@ -1,6 +1,6 @@
 import { Sea } from '../biomes/sea.js';
 import { FreshWater } from '../biomes/fresh-water.js';
-import { getTileNeighbours, getPathMap } from '../helpers.js';
+import { getTileNeighbours, getPathMap, xyToIndex } from '../helpers.js';
 import { AStar, Graph } from '../../3rdparty/astar.js';
 
 export class River {
@@ -23,7 +23,13 @@ export class River {
         // randomise start location
         const startX = Math.floor(this.width / 2 - this.rng() * maxStartX);
         const startY = Math.floor(this.height / 2 - this.rng() * maxStartY);
-        const graphMap = new Graph(getPathMap(this.matrix, [], [FreshWater]));
+        const graphMap = new Graph(getPathMap(
+            this.matrix,
+            this.width,
+            this.height,
+            [],
+            [FreshWater],
+        ));
 
         const directions = [
             {
@@ -55,22 +61,31 @@ export class River {
 
         for (let i = 0; i < resultWithWeight.length; i += 1) {
             const cell = resultWithWeight[i];
+            const index = xyToIndex(cell.x, cell.y, this.width, this.height);
 
-            if (this.matrix[cell.x][cell.y] instanceof Sea) {
+            if (this.matrix[index] instanceof Sea) {
                 break;
             }
 
             // set the current tile to floor type
-            this.matrix[cell.x][cell.y] = new FreshWater();
-            this.path.push({ x: cell.x, y: cell.y });
+            this.matrix[index] = new FreshWater();
+            this.path.push({ i: index, x: cell.x, y: cell.y });
 
             // we are flush with sea, stop the stepper.
-            if (getTileNeighbours(this.matrix, cell.x, cell.y, Sea).length > 0) {
+            if (getTileNeighbours(this.matrix, this.width, this.height, index, Sea).length > 0) {
                 break;
             }
 
+            const freshWaterNeighbouts = getTileNeighbours(
+                this.matrix,
+                this.width,
+                this.height,
+                index,
+                FreshWater,
+            );
+
             // we are flush with fresh water, stop the stepper.
-            if (getTileNeighbours(this.matrix, cell.x, cell.y, FreshWater).length > 1) {
+            if (freshWaterNeighbouts.length > 1) {
                 break;
             }
         }

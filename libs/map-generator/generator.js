@@ -13,9 +13,11 @@ import { River } from './generators/river.js';
 import { Stepper } from './generators/stepper.js';
 import {
     getTileNeighbours,
-    isValidCell,
+    isValidIndex,
     findNearest,
     convertToScanline,
+    indexToXY,
+    xyToIndex,
 } from './helpers.js';
 
 export class Generator {
@@ -24,7 +26,15 @@ export class Generator {
         this.setHeight(height);
         this.setWidth(width);
 
-        this.matrix = [...Array(this.width)].map(() => Array(this.height).fill(new Void()));
+        this.matrix = [...Array(this.width * this.height).fill(new Void())];
+    }
+
+    /**
+     * Returns how long it took to generate the map in MS.
+     * @return {number} Generation time in MS
+     */
+    get gentime() {
+        return (this.genEnd - this.genStart) / 1000;
     }
 
     /**
@@ -32,6 +42,8 @@ export class Generator {
      * @return {Promise} Resolves when complete
      */
     async generate() {
+        this.genStart = Date.now();
+
         // Generate the land mass
         await Promise.all([...Array(this.landmassStepperCount)]
             .map((v, i) => this.generateLandmass(this.landmassStepperSteps, i)));
@@ -40,64 +52,61 @@ export class Generator {
         this.postProccess();
 
         // generate sea water
-        await this.floodFill(Sea, 1, 1);
+        // await this.floodFill(Sea, xyToIndex(1, 1, this.width, this.height));
 
         // generate fresh water
         // find any other void cells, and turn them into fresh water
-        this.matrix = this.matrix.map((x) => x.map((cell) => {
-            let tile = cell;
+        // for (let i = 0; i < this.matrix.length; i += 1) {
+        //     const tile = this.matrix[i];
 
-            if (cell instanceof Void) {
-                tile = new FreshWater();
-            }
+        //     if (tile instanceof Void) {
+        //         this.matrix[i] = new FreshWater();
+        //     }
+        // }
 
-            return tile;
-        }));
+        // // generate general world elevation
+        // await this.generateElevation();
 
-        // generate general world elevation
-        await this.generateElevation();
+        // // create rivers
+        // // await Promise.all([...Array(this.riverCount ?? 1)]
+        // //     .map(() => this.generateRivers()));
 
-        // create rivers
-        await Promise.all([...Array(this.riverCount ?? 1)]
-            .map(() => this.generateRivers()));
+        // // calculate the moisture for each placeholder cell
+        // await this.generateMoisture();
 
-        // calculate the moisture for each placeholder cell
-        await this.generateMoisture();
+        // // generate beaches
+        // this.generateBeaches();
 
-        // generate beaches
-        this.generateBeaches();
+        // // generate biomes
+        // for (let i = 0; i < this.matrix.length; i += 1) {
+        //     const tile = this.matrix[i];
 
-        // generate biomes
-        this.matrix.forEach((tiles, x) => tiles.forEach((tile, y) => {
-            if (!(tile instanceof Placeholder)) {
-                return;
-            }
+        //     if (!(tile instanceof Placeholder)) {
+        //         return;
+        //     }
 
-            this.matrix[x][y] = createBiome(tile.elevation, tile.moisture);
-        }));
+        //     this.matrix[i] = createBiome(tile.elevation, tile.moisture);
+        // }
+
+        this.genEnd = Date.now();
     }
 
     generateMoisture() {
         const moistures = [];
-        const xMax = this.matrix.length;
 
         // loop each ground tile
-        for (let x = 0; x < xMax; x += 1) {
-            const yMax = this.matrix[x].length;
+        for (let i = 0; i < this.matrix.length; i += 1) {
+            const tile = this.matrix[i];
 
-            for (let y = 0; y < yMax; y += 1) {
-                const tile = this.matrix[x][y];
-
-                if (!(tile instanceof Placeholder)) {
-                    continue;
-                }
-
-                const nearestWater = findNearest(this.matrix, x, y, FreshWater);
-                const { distance } = nearestWater[0];
-
-                this.matrix[x][y].distanceFromWater = distance;
-                moistures.push({ x, y, distance });
+            if (!(tile instanceof Placeholder)) {
+                continue;
             }
+
+            const nearestWater = findNearest(this.matrix, this.width, this.height, i, FreshWater);
+            const { distance } = nearestWater[0];
+
+            this.matrix[i].distanceFromWater = distance;
+            moistures.push({ i, distance });
         }
 
         // sort by distance
@@ -106,38 +115,35 @@ export class Generator {
         // normalise the distances by deviding the biggest distance by 6
         const perMoistureStage = moistures[0].distance / 6;
 
-        moistures.forEach((coord) => {
-            let moisture = 6 - Math.ceil(coord.distance / perMoistureStage) + 1;
+        for (let i = 0; i < moistures.length; i += 1) {
+            const tile = moistures[i];
+
+            let moisture = 6 - Math.ceil(tile.distance / perMoistureStage) + 1;
 
             if (moisture > 6) {
                 moisture = 6;
             }
 
-            this.matrix[coord.x][coord.y].moisture = moisture;
-        });
+            this.matrix[i].moisture = moisture;
+        }
     }
 
     generateElevation() {
         const groundElevations = [];
-        const xMax = this.matrix.length;
 
         // loop each ground tile
-        for (let x = 0; x < xMax; x += 1) {
-            const yMax = this.matrix[x].length;
+        for (let i = 0; i < this.matrix.length; i += 1) {
+            const tile = this.matrix[i];
 
-            for (let y = 0; y < yMax; y += 1) {
-                const tile = this.matrix[x][y];
-
-                if (!(tile instanceof Placeholder)) {
-                    continue;
-                }
-
-                const nearestSea = findNearest(this.matrix, x, y, Sea);
-                const { distance } = nearestSea[0];
-
-                this.matrix[x][y].distanceFromSea = distance;
-                groundElevations.push({ x, y, distance });
+            if (!(tile instanceof Placeholder)) {
+                continue;
             }
+
+            const nearestSea = findNearest(this.matrix, this.width, this.height, i, Sea);
+            const { distance } = nearestSea[0];
+
+            this.matrix[i].distanceFromSea = distance;
+            groundElevations.push({ i, distance });
         }
 
         // sort by distance
@@ -146,37 +152,42 @@ export class Generator {
         // normalise the distances by deviding the biggest distance by 4
         const perElevation = Math.floor(groundElevations[0].distance / 4);
 
-        groundElevations.forEach((coord) => {
-            let elevation = Math.floor(coord.distance / perElevation);
+        for (let i = 0; i < groundElevations.length; i += 1) {
+            const tile = groundElevations[i];
+
+            let elevation = Math.floor(tile.distance / perElevation);
 
             if (elevation === 0) {
                 elevation = 1;
             }
 
-            // console.log(elevation);
-
-            this.matrix[coord.x][coord.y].elevation = elevation;
-        });
+            this.matrix[tile.i].elevation = elevation;
+        }
     }
 
     generateBeaches() {
-        for (let x = 0; x < this.width; x += 1) {
-            for (let y = 0; y < this.height; y += 1) {
-                const tile = this.matrix[x][y];
+        for (let i = 0; i < this.matrix.length; i += 1) {
+            const tile = this.matrix[i];
 
-                if (!(tile instanceof Placeholder)) {
-                    continue;
-                }
+            if (!(tile instanceof Placeholder)) {
+                continue;
+            }
 
-                if (tile.elevation !== 1 || tile.moisture > 2) {
-                    continue;
-                }
+            if (tile.elevation !== 1 || tile.moisture > 2) {
+                continue;
+            }
 
-                const neighbours = getTileNeighbours(this.matrix, x, y, Sea, true);
+            const neighbours = getTileNeighbours(
+                this.matrix,
+                this.width,
+                this.height,
+                i,
+                Sea,
+                true,
+            );
 
-                if (neighbours.length >= 1) {
-                    this.matrix[x][y] = new Beach();
-                }
+            if (neighbours.length >= 1) {
+                this.matrix[i] = new Beach();
             }
         }
     }
@@ -293,38 +304,35 @@ export class Generator {
     /**
      * Fills all Void and connected void tiles, with Biome tiles
      * @param  {[type]} Biome       The biome tyoe to fill with
-     * @param  {number} x           Start x
-     * @param  {number} y           Start y
+     * @param  {number} i           Start tile index
      * @param  {Map} activeCells    Keeps track of cells which have been touched
      * @return {Promise}            Resolves when done
      */
-    async floodFill(Biome, x, y, activeCells = null) {
-        let cells = activeCells;
-
-        if (!cells) {
-            cells = new Map();
-        }
-
-        if (!(this.matrix[x][y] instanceof Void)) {
+    async floodFill(Biome, i, activeCells = new Map()) {
+        if (!(this.matrix[i] instanceof Void)) {
             return;
         }
 
-        this.matrix[x][y] = new Biome();
+        this.matrix[i] = new Biome();
+
+        const { x, y } = indexToXY(i, this.width, this.height);
 
         // spawn fillers in all directions
         const validDirections = Stepper.directions
             .filter((direction) => {
                 const key = `${x + direction.x}-${y + direction.y}`;
 
-                if (cells.has(key)) {
+                if (activeCells.has(key)) {
                     return false;
                 }
 
-                if (!isValidCell(this.matrix, x + direction.x, y + direction.y)) {
+                const index = xyToIndex(x + direction.x, y + direction.y, this.width, this.height);
+
+                if (!isValidIndex(this.matrix, index)) {
                     return false;
                 }
 
-                cells.set(key, true);
+                activeCells.set(key, true);
                 return true;
             });
 
@@ -335,8 +343,10 @@ export class Generator {
         // TODO: Rewrite the flood fill logic to not hit call stack limit
         // eslint-disable-next-line no-restricted-syntax
         for (const direction of validDirections) {
+            const index = xyToIndex(x + direction.x, y + direction.y, this.width, this.height);
+
             // eslint-disable-next-line no-await-in-loop
-            await this.floodFill(Biome, x + direction.x, y + direction.y, activeCells);
+            await this.floodFill(Biome, index, activeCells);
         }
     }
 
@@ -346,21 +356,21 @@ export class Generator {
      */
     postProccess(grid = null, skipClean = []) {
         if (grid) {
-            grid.forEach((cell, index) => {
-                this.cleanTile(cell.x, cell.y, skipClean.includes(index));
-            });
+            for (let i = 0; i < grid.length; i += 1) {
+                const cell = grid[i];
+                this.cleanTile(cell.x, cell.y, skipClean.includes(i));
+            }
             return;
         }
 
         // remove long stragglers
         this.removeStragglers();
+        return;
 
         // run from top to bottom
-        this.matrix.forEach((row, x) => {
-            row.forEach((tile, y) => {
-                this.cleanTile(x, y);
-            });
-        });
+        for (let i = 0; i < this.matrix.length; i += 1) {
+            this.cleanTile(i);
+        }
     }
 
     /**
@@ -368,33 +378,41 @@ export class Generator {
      * @return {void}
      */
     removeStragglers() {
-        this.matrix.forEach((row, x) => {
-            row.forEach((tile, y) => {
-                if (!(tile instanceof Placeholder)) {
-                    return;
-                }
+        for (let i = 0; i < this.matrix.length; i += 1) {
+            const tile = this.matrix[i];
 
-                const neighbours = getTileNeighbours(this.matrix, x, y, Placeholder, true);
+            if (!(tile instanceof Placeholder)) {
+                return;
+            }
 
-                if (neighbours.length <= 2) {
-                    this.matrix[x][y] = new Void();
-                }
-            });
-        });
+            const neighbours = getTileNeighbours(
+                this.matrix,
+                this.width,
+                this.height,
+                i,
+                Placeholder,
+                true,
+            );
+
+            if (neighbours.length <= 2) {
+                this.matrix[i] = new Void();
+            }
+        }
     }
 
     /**
      * Removes the tile if its 1 or less neighbouts.
      * Will continue to search its neighbouts
-     * @param  {number} x
-     * @param  {number} y
+     * @param  {number} index
      * @param  {boolean} skipClean    Set if you want to ignore clean for this coordinate.
      *                                Useful for the start end end of rivers or similar.
      */
-    cleanTile(x, y, skipClean = false) {
+    cleanTile(i, skipClean = false) {
         if (skipClean) {
             return;
         }
+
+        const { x, y } = indexToXY(i, this.width, this.height);
 
         // ignore outter rim
         if (y === 0 // top
@@ -402,11 +420,11 @@ export class Generator {
             || x === 0 // left
             || x === this.width - 1 // right
         ) {
-            this.matrix[x][y] = new Void();
+            this.matrix[i] = new Void();
             return;
         }
 
-        const neighbours = getTileNeighbours(this.matrix, x, y);
+        const neighbours = getTileNeighbours(this.matrix, this.width, this.height, i);
 
         if (neighbours.length > 1) {
             return;
@@ -414,18 +432,18 @@ export class Generator {
 
         // if a tile is alone, convert it
         if (neighbours.length <= 1) {
-            if (this.matrix[x][y] instanceof Void) {
-                this.matrix[x][y] = new Placeholder();
-            } else if (this.matrix[x][y] instanceof FreshWater) {
-                this.matrix[x][y] = new Placeholder();
+            if (this.matrix[i] instanceof Void) {
+                this.matrix[i] = new Placeholder();
+            } else if (this.matrix[i] instanceof FreshWater) {
+                this.matrix[i] = new Placeholder();
             } else {
-                this.matrix[x][y] = new Void();
+                this.matrix[i] = new Void();
             }
         }
 
-        neighbours.forEach((neighbour) => {
-            this.cleanTile(neighbour.x, neighbour.y);
-        });
+        for (let c = 0; c < neighbours.length; c += 1) {
+            this.cleanTile(neighbours[c].index);
+        }
     }
 
     /**
@@ -433,7 +451,7 @@ export class Generator {
      * @return {void}
      */
     outputToConsole() {
-        const grid = convertToScanline(this.matrix);
+        const grid = convertToScanline(this.matrix, this.width, this.height);
 
         for (let y = 0; y < grid.length; y += 1) {
             const tiles = grid[y];

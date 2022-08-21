@@ -1,6 +1,6 @@
 import { Placeholder } from '../biomes/placeholder.js';
 import { Stepper } from './stepper.js';
-import { isValidCell } from '../helpers.js';
+import { isValidIndex, xyToIndex } from '../helpers.js';
 
 export class Landmass extends Stepper {
     constructor(width, height, rng, matrix = null) {
@@ -12,14 +12,14 @@ export class Landmass extends Stepper {
      * @param {Number} steps    The number of steps the generator should take
      * @return {Void}
      */
-    generate(steps = 100) {
-        return this.run(async (stepperX, stepperY, lastDirection) => {
+    async generate(steps = 100) {
+        await this.run(async (stepperX, stepperY, index, lastDirection) => {
             if (lastDirection.steps === 3) {
                 this.fillArea(stepperX, stepperY);
             }
 
             // set the current tile to floor type
-            this.matrix[stepperX][stepperY] = new Placeholder();
+            this.matrix[index] = new Placeholder();
         }, steps);
     }
 
@@ -45,8 +45,10 @@ export class Landmass extends Stepper {
                     return;
                 }
 
-                if (isValidCell(this.matrix, newX, newY)) {
-                    this.matrix[newX][newY] = new Placeholder();
+                const index = xyToIndex(newX, newY, this.width, this.height);
+
+                if (isValidIndex(this.matrix, index)) {
+                    this.matrix[index] = new Placeholder();
                 }
 
                 yOffset += 1;

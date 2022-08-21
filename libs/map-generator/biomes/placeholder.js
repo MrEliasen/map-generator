@@ -5,6 +5,6 @@ export class Placeholder extends Biome {
         super();
 
         this.name = 'Placeholder';
-        this.color = '#000000';
+        this.color = '#ffffff';
     }
 }

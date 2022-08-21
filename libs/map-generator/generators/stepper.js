@@ -2,6 +2,7 @@ import { North } from './directions/north.js';
 import { West } from './directions/west.js';
 import { South } from './directions/south.js';
 import { East } from './directions/east.js';
+import { xyToIndex } from '../helpers.js';
 
 export class Stepper {
     // Directions the stepper can take
@@ -101,12 +102,15 @@ export class Stepper {
 
             lastDirection.steps += 1;
 
-            this.stepsHistory.push({ x: stepperX, y: stepperY });
+            const index = xyToIndex(stepperX, stepperY, this.width, this.height);
+
+            this.stepsHistory.push({ x: stepperX, y: stepperY, i: index });
 
             // eslint-disable-next-line no-await-in-loop
             const proceed = await onStep(
                 stepperX,
                 stepperY,
+                index,
                 lastDirection,
                 (steps - stepsLeft + 1),
             );

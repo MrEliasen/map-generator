@@ -15,6 +15,7 @@ async function run() {
 
     // eslint-disable-next-line
     console.log(chalk.green(`Seed: ${mapGenerator.seed}`));
+    console.log(chalk.green(`Generation Time: ${mapGenerator.gentime} seconds`));
 
     fs.writeFileSync(
         'example-map.json',
